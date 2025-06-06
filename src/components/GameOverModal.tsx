@@ -12,6 +12,7 @@ export default function GameOverModal() {
     try {
       await insertScore(nickname, game.score)
       setGame({ status: 'idle', score: 0, nickname: '' })
+      window.location.reload() // 점수 저장 후 페이지 새로고침
     } catch (err) {
       alert('점수 저장 실패')
     }
