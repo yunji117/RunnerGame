@@ -35,20 +35,35 @@ export default function GameCanvas() {
     const gravity = 0.7
     const jumpPower = -13
     let isJumping = false
+    let jumpCount = 0 // 점프 횟수(더블점프 구현)
     let score = 0
+    let obstacleSpeed = 3
 
-    const obstacle = new PIXI.Graphics()
-    obstacle.beginFill(0xff4444)
-    obstacle.drawRect(0, 0, 30, 50)
-    obstacle.endFill()
-    obstacle.x = 800
-    obstacle.y = groundY
-    app.stage.addChild(obstacle)
+    // 장애물 여러 개 관리
+    const MAX_OBSTACLES = 3
+    const obstacles: PIXI.Graphics[] = []
+    const obstacleStates: { x: number }[] = []
+    for (let i = 0; i < MAX_OBSTACLES; i++) {
+      const obs = new PIXI.Graphics()
+      obs.beginFill(0xff4444)
+      obs.drawRect(0, 0, 30, 50)
+      obs.endFill()
+      // 각 장애물의 시작 위치를 랜덤하게 배치
+      const minGap = 100
+      const maxGap = 300
+      const gap = 300 + i * 200 + Math.random() * (maxGap - minGap)
+      obs.x = 800 + gap
+      obs.y = groundY
+      obstacles.push(obs)
+      obstacleStates.push({ x: obs.x })
+      app.stage.addChild(obs)
+    }
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.code === 'Space' && !isJumping) {
+      if (e.code === 'Space' && jumpCount < 2) {
         velocityY = jumpPower
         isJumping = true
+        jumpCount++
       }
     }
 
@@ -63,31 +78,44 @@ export default function GameCanvas() {
         dino.y = groundY
         velocityY = 0
         isJumping = false
+        jumpCount = 0 // 착지 시 점프 횟수 초기화
       }
 
-      // 장애물 이동
-      obstacle.x -= 5
-      if (obstacle.x < -30) {
-        obstacle.x = 800 + Math.random() * 200
+      // 장애물 속도 증가 (최대 20까지)
+      obstacleSpeed = Math.min(5 + Math.floor(score / (60 * 5)), 20)
+      // 장애물들 이동 및 재배치
+      for (let i = 0; i < MAX_OBSTACLES; i++) {
+        obstacleStates[i].x -= obstacleSpeed
+        if (obstacleStates[i].x < -30) {
+          // 앞 장애물과의 간격을 고려해 재배치
+          const minGap = 100
+          const maxGap = 300
+          // 마지막 장애물의 x 위치를 기준으로 간격 확보
+          let prevIdx = (i - 1 + MAX_OBSTACLES) % MAX_OBSTACLES
+          let prevX = obstacleStates[prevIdx].x
+          let baseX = Math.max(800, prevX + minGap)
+          obstacleStates[i].x = baseX + minGap + Math.random() * (maxGap - minGap)
+        }
+        obstacles[i].x = obstacleStates[i].x
       }
-
-      // 충돌 판정
-      if (
-        dino.x + 50 > obstacle.x &&
-        dino.x < obstacle.x + 30 &&
-        dino.y + 50 > obstacle.y
-      ) {
-        setGame((prev) => ({ ...prev, status: 'gameover', score }))
-        ticker.stop()
-        window.removeEventListener('keydown', handleKeyDown)
-        if (app.stage) app.stage.removeChildren()
-        try {
-          app.destroy(true)
-        } catch (e) {
-          console.warn('Pixi destroy error', e)
+      // 충돌 판정 (여러 장애물)
+      for (let i = 0; i < MAX_OBSTACLES; i++) {
+        if (
+          dino.x + 50 > obstacles[i].x &&
+          dino.x < obstacles[i].x + 30 &&
+          dino.y + 50 > obstacles[i].y
+        ) {
+          setGame((prev) => ({ ...prev, status: 'gameover', score }))
+          ticker.stop()
+          window.removeEventListener('keydown', handleKeyDown)
+          if (app.stage) app.stage.removeChildren()
+          try {
+            app.destroy(true)
+          } catch (e) {
+            console.warn('Pixi destroy error', e)
+          }
         }
       }
-
       score++
       setGame((prev) => ({ ...prev, score }))
     })
