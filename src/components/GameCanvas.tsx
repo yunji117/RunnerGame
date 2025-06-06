@@ -1,100 +1,108 @@
-// GameCanvas.tsx
-import * as PIXI from 'pixi.js'
 import { useEffect, useRef } from 'react'
-import { useSetRecoilState } from 'recoil'
+import * as PIXI from 'pixi.js'
+import { useRecoilState } from 'recoil'
 import { gameState } from '../states/gameState'
 
 export default function GameCanvas() {
+  const [game, setGame] = useRecoilState(gameState)
   const canvasRef = useRef<HTMLDivElement>(null)
-  const setGame = useSetRecoilState(gameState)
 
   useEffect(() => {
-    const app = new PIXI.Application({ width: 800, height: 400, backgroundColor: 0xf4f4f4 })
-    canvasRef.current?.appendChild(app.view as HTMLCanvasElement)
+    if (game.status !== 'playing') return // 게임 상태가 playing일 때만 시작
 
-    const gravity = 0.7
-    const jumpPower = -13
-    let velocityY = 0
-    let isJumping = false
-    const groundY = 300
-    let score = 0
-
-    const player = new PIXI.Graphics()
-    player.beginFill(0x00aaff)
-    player.drawRect(0, 0, 50, 50)
-    player.endFill()
-    player.x = 100
-    player.y = groundY
-    app.stage.addChild(player)
-
-    const obstacle = new PIXI.Graphics()
-    obstacle.beginFill(0xff0000)
-    obstacle.drawRect(0, 0, 40, 40)
-    obstacle.endFill()
-    obstacle.x = 800
-    obstacle.y = groundY + 10
-    app.stage.addChild(obstacle)
-
-    let time = 0
-    let timer = setInterval(() => time++, 1000)
-
-    // Game loop
-    app.ticker.add(() => {
-      if (isJumping) {
-        velocityY += gravity
-        player.y += velocityY
-        if (player.y >= groundY) {
-          player.y = groundY
-          isJumping = false
-          velocityY = 0
-        }
-      }
-
-      obstacle.x -= 5
-      if (obstacle.x < -50) {
-        obstacle.x = 800 + Math.random() * 200
-      }
-
-      const hit = checkCollision(player, obstacle)
-      if (hit) {
-        app.stop()
-        clearInterval(timer)
-        setGame((g) => ({
-          ...g,
-          status: 'gameover',
-          score: time
-        }))
-      }
+    const app = new PIXI.Application({
+      width: 800,
+      height: 400,
+      backgroundColor: 0xf4f4f4,
     })
 
-    const onJump = () => {
-      if (!isJumping) {
+    if (canvasRef.current) {
+      canvasRef.current.innerHTML = ''
+      canvasRef.current.appendChild(app.view as HTMLCanvasElement)
+      canvasRef.current.focus()
+    }
+
+    const dino = new PIXI.Graphics()
+    dino.beginFill(0x333333)
+    dino.drawRect(0, 0, 50, 50)
+    dino.endFill()
+    dino.x = 100
+    dino.y = 300
+    app.stage.addChild(dino)
+
+    const groundY = 300
+    let velocityY = 0
+    const gravity = 0.7
+    const jumpPower = -13
+    let isJumping = false
+    let score = 0
+
+    const obstacle = new PIXI.Graphics()
+    obstacle.beginFill(0xff4444)
+    obstacle.drawRect(0, 0, 30, 50)
+    obstacle.endFill()
+    obstacle.x = 800
+    obstacle.y = groundY
+    app.stage.addChild(obstacle)
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code === 'Space' && !isJumping) {
         velocityY = jumpPower
         isJumping = true
       }
     }
 
-    window.addEventListener('keydown', (e) => {
-      if (e.code === 'Space') onJump()
+    window.addEventListener('keydown', handleKeyDown)
+
+    const ticker = app.ticker.add(() => {
+      // 중력 적용
+      if (dino.y < groundY || velocityY < 0) {
+        velocityY += gravity
+        dino.y += velocityY
+      } else {
+        dino.y = groundY
+        velocityY = 0
+        isJumping = false
+      }
+
+      // 장애물 이동
+      obstacle.x -= 5
+      if (obstacle.x < -30) {
+        obstacle.x = 800 + Math.random() * 200
+      }
+
+      // 충돌 판정
+      if (
+        dino.x + 50 > obstacle.x &&
+        dino.x < obstacle.x + 30 &&
+        dino.y + 50 > obstacle.y
+      ) {
+        setGame((prev) => ({ ...prev, status: 'gameover', score }))
+        ticker.stop()
+        window.removeEventListener('keydown', handleKeyDown)
+        if (app.stage) app.stage.removeChildren()
+        try {
+          app.destroy(true)
+        } catch (e) {
+          console.warn('Pixi destroy error', e)
+        }
+      }
+
+      score++
+      setGame((prev) => ({ ...prev, score }))
     })
 
-    app.view.addEventListener('click', onJump)
-
     return () => {
-      app.destroy(true, true)
-      clearInterval(timer)
-      window.removeEventListener('keydown', onJump)
+      window.removeEventListener('keydown', handleKeyDown)
+      ticker.stop()
+      if (app.stage) app.stage.removeChildren()
+      try {
+        app.destroy(true)
+      } catch (e) {
+        console.warn('Pixi destroy error', e)
+      }
     }
-  }, [])
+  }, [game.status])
 
-  return <div ref={canvasRef} className="w-full flex justify-center py-8" />
-}
-
-function checkCollision(a: PIXI.Graphics, b: PIXI.Graphics) {
-  const ab = a.getBounds()
-  const bb = b.getBounds()
-  return ab.x + ab.width > bb.x &&
-         ab.x < bb.x + bb.width &&
-         ab.y + ab.height > bb.y &&
-         ab.y < bb.y + bb.height
+  return <div ref={canvasRef} className="w-full h-full" tabIndex={0} />
 }
