@@ -22,7 +22,7 @@ export default function GameCanvas() {
       canvasRef.current.focus()
     }
 
-    const bg = PIXI.Sprite.from('/img/bgimg.png')
+    const bg = PIXI.Sprite.from('/img/bgimgg.svg')
     bg.width = app.view.width  
     bg.height = app.view.height
     bg.x = 0
