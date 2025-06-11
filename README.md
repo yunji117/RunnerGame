@@ -52,3 +52,49 @@ export default tseslint.config({
   },
 })
 ```
+
+```
+runner-game
+├─ eslint.config.js
+├─ index.html
+├─ package-lock.json
+├─ package.json
+├─ postcss.config.js
+├─ public
+│  ├─ img
+│  │  ├─ beer.svg
+│  │  ├─ facebook.svg
+│  │  ├─ instar.svg
+│  │  ├─ soju.svg
+│  │  └─ uk.svg
+│  └─ vite.svg
+├─ README.md
+├─ src
+│  ├─ api
+│  │  ├─ fetchTopScores.ts
+│  │  └─ insertScore.ts
+│  ├─ App.css
+│  ├─ App.tsx
+│  ├─ assets
+│  │  └─ react.svg
+│  ├─ components
+│  │  ├─ GameCanvas.tsx
+│  │  ├─ GameOverModal.tsx
+│  │  ├─ Leaderboard.tsx
+│  │  └─ StartButton.tsx
+│  ├─ index.css
+│  ├─ main.tsx
+│  ├─ pages
+│  │  └─ index.tsx
+│  ├─ states
+│  │  └─ gameState.ts
+│  ├─ utils
+│  │  └─ collision.ts
+│  └─ vite-env.d.ts
+├─ tailwind.config.js
+├─ tsconfig.app.json
+├─ tsconfig.json
+├─ tsconfig.node.json
+└─ vite.config.ts
+
+```
