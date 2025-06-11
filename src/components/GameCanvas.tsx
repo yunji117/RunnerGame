@@ -22,6 +22,7 @@ export default function GameCanvas() {
       canvasRef.current.focus()
     }
 
+    // 배경 이미지
     const bg = PIXI.Sprite.from('/img/bgimgg.svg')
     bg.width = app.view.width  
     bg.height = app.view.height
@@ -29,6 +30,7 @@ export default function GameCanvas() {
     bg.y = 0
     app.stage.addChild(bg)
 
+    // 주인공 이미지
     const human = PIXI.Sprite.from('/img/uk.svg') 
     human.width = 50
     human.height = 70
@@ -48,7 +50,6 @@ export default function GameCanvas() {
     const MAX_OBSTACLES = 3
     const obstacles: PIXI.Sprite[] = []
     const obstacleStates: { x: number }[] = []
-    // 장애물 이미지 경로 배열
     const obstacleImages = [
       '/img/facebook.svg',
       '/img/instar.svg',
@@ -70,6 +71,7 @@ export default function GameCanvas() {
       app.stage.addChild(obs)
     }
 
+    // 키보드 점프 이벤트
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.code === 'Space' && jumpCount < 2) {
         velocityY = jumpPower
@@ -77,7 +79,17 @@ export default function GameCanvas() {
       }
     }
 
+    // 터치 점프 이벤트
+    const handleTouchStart = (e: TouchEvent) => {
+      e.preventDefault()
+      if (jumpCount < 2) {
+        velocityY = jumpPower
+        jumpCount++
+      }
+    }
+
     window.addEventListener('keydown', handleKeyDown)
+    window.addEventListener('touchstart', handleTouchStart, { passive: false })
 
     const ticker = app.ticker.add(() => {
       if (human.y < groundY || velocityY < 0) {
@@ -113,6 +125,7 @@ export default function GameCanvas() {
           setGame((prev) => ({ ...prev, status: 'gameover', score }))
           ticker.stop()
           window.removeEventListener('keydown', handleKeyDown)
+          window.removeEventListener('touchstart', handleTouchStart)
           if (app.stage) app.stage.removeChildren()
           try {
             app.destroy(true)
@@ -127,6 +140,7 @@ export default function GameCanvas() {
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown)
+      window.removeEventListener('touchstart', handleTouchStart)
       ticker.stop()
       if (app.stage) app.stage.removeChildren()
       try {
