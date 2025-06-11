@@ -22,6 +22,13 @@ export default function GameCanvas() {
       canvasRef.current.focus()
     }
 
+    const bg = PIXI.Sprite.from('/img/bgimg.png')
+    bg.width = app.view.width  
+    bg.height = app.view.height
+    bg.x = 0
+    bg.y = 0
+    app.stage.addChild(bg)
+
     const human = PIXI.Sprite.from('/img/uk.svg') 
     human.width = 50
     human.height = 70
