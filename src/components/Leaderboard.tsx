@@ -11,7 +11,11 @@ function getErrorMessage(error: unknown) {
   return '순위 정보를 가져오지 못했습니다.'
 }
 
-export default function Leaderboard() {
+type LeaderboardProps = {
+  refreshKey: number
+}
+
+export default function Leaderboard({ refreshKey }: LeaderboardProps) {
   const [scores, setScores] = useState<Score[]>([])
   const [showAll, setShowAll] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
@@ -32,7 +36,7 @@ export default function Leaderboard() {
 
   useEffect(() => {
     void loadScores()
-  }, [loadScores])
+  }, [loadScores, refreshKey])
 
   const visibleScores = showAll ? scores : scores.slice(0, 3)
 

@@ -12,22 +12,54 @@ add column if not exists created_at timestamptz not null default now();
 
 alter table public.runner_game_scores enable row level security;
 
-drop policy if exists "runner_game_scores_select" on public.runner_game_scores;
-create policy "runner_game_scores_select"
-on public.runner_game_scores
-for select
-to anon, authenticated
-using (true);
+-- RLS policies decide which rows are accessible, while these grants allow the
+-- shared project's public API roles to reach this app-specific table at all.
+grant select, insert
+on table public.runner_game_scores
+to anon, authenticated;
 
-drop policy if exists "runner_game_scores_insert" on public.runner_game_scores;
-create policy "runner_game_scores_insert"
-on public.runner_game_scores
-for insert
-to anon, authenticated
-with check (
-  time >= 0
-  and char_length(trim(nickname)) between 1 and 20
-);
+grant usage, select
+on sequence public.runner_game_scores_id_seq
+to anon, authenticated;
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_policies
+    where schemaname = 'public'
+      and tablename = 'runner_game_scores'
+      and policyname = 'runner_game_scores_select'
+  ) then
+    create policy "runner_game_scores_select"
+    on public.runner_game_scores
+    for select
+    to anon, authenticated
+    using (true);
+  end if;
+end;
+$$;
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_policies
+    where schemaname = 'public'
+      and tablename = 'runner_game_scores'
+      and policyname = 'runner_game_scores_insert'
+  ) then
+    create policy "runner_game_scores_insert"
+    on public.runner_game_scores
+    for insert
+    to anon, authenticated
+    with check (
+      time >= 0
+      and char_length(trim(nickname)) between 1 and 20
+    );
+  end if;
+end;
+$$;
 
 create index if not exists runner_game_scores_time_created_at_idx
 on public.runner_game_scores (time desc, created_at asc);

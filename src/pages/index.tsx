@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useRecoilValue } from 'recoil'
 import { gameState } from '../states/gameState'
 import StartButton from '../components/StartButton'
@@ -7,6 +8,7 @@ import Leaderboard from '../components/Leaderboard'
 
 export default function GamePage() {
   const game = useRecoilValue(gameState)
+  const [leaderboardRefreshKey, setLeaderboardRefreshKey] = useState(0)
 
   return (
     <main className="flex min-h-screen w-full flex-col items-center space-y-6 bg-gray-100 p-4">
@@ -19,7 +21,9 @@ export default function GamePage() {
         )}
         {game.status === 'gameover' && (
           <div className="absolute inset-0 z-10 flex items-center justify-center">
-            <GameOverModal />
+            <GameOverModal
+              onScoreSaved={() => setLeaderboardRefreshKey((key) => key + 1)}
+            />
           </div>
         )}
         <div className="absolute right-4 top-3 z-20 rounded bg-black/45 px-2 py-1 font-mono text-sm text-white">
@@ -32,7 +36,7 @@ export default function GamePage() {
         )}
       </section>
 
-      <Leaderboard />
+      <Leaderboard refreshKey={leaderboardRefreshKey} />
     </main>
   )
 }

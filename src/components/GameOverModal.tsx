@@ -20,7 +20,11 @@ const bannedWords = [
   'tlqkf',
 ]
 
-export default function GameOverModal() {
+type GameOverModalProps = {
+  onScoreSaved: () => void
+}
+
+export default function GameOverModal({ onScoreSaved }: GameOverModalProps) {
   const [game, setGame] = useRecoilState(gameState)
   const [nickname, setNickname] = useState('')
   const [isSaving, setIsSaving] = useState(false)
@@ -46,6 +50,7 @@ export default function GameOverModal() {
     setSaveError('')
     try {
       await insertScore(normalizedNickname, game.score)
+      onScoreSaved()
       close()
     } catch (error) {
       console.error('점수를 저장하지 못했습니다.', error)
