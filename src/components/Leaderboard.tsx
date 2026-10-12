@@ -1,52 +1,87 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { fetchTopScores } from '../api/fetchTopScores'
+import { isSupabaseConfigured } from '../api/supabase'
+import type { Score } from '../api/types'
 
-type Score = {
-  id: string
-  nickname: string
-  time: number
+function getErrorMessage(error: unknown) {
+  if (!isSupabaseConfigured()) {
+    return '게임은 정상적으로 이용할 수 있지만, Supabase 재연결 전까지 순위표는 중지됩니다.'
+  }
+  if (error instanceof Error && error.message) return error.message
+  return '순위 정보를 가져오지 못했습니다.'
 }
 
 export default function Leaderboard() {
   const [scores, setScores] = useState<Score[]>([])
   const [showAll, setShowAll] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [loadError, setLoadError] = useState('')
+
+  const loadScores = useCallback(async () => {
+    setIsLoading(true)
+    setLoadError('')
+    try {
+      setScores(await fetchTopScores())
+    } catch (error) {
+      console.error('순위 정보를 가져오지 못했습니다.', error)
+      setLoadError(getErrorMessage(error))
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
 
   useEffect(() => {
-    fetchTopScores()
-      .then(setScores)
-      .catch(() => alert('순위 정보를 가져올 수 없습니다.'))
-  }, [])
+    void loadScores()
+  }, [loadScores])
 
   const visibleScores = showAll ? scores : scores.slice(0, 3)
 
   return (
-    <div className="w-full max-w-md bg-white shadow rounded-xl p-4 my-4">
-      <h2 className="text-xl font-bold mb-3 text-center">🏆 순위표 (TOP 50)</h2>
-      <ul className="space-y-1">
-        {visibleScores.map((s, i) => (
-          <li key={s.id} className="flex justify-between px-2 py-1 bg-gray-50 rounded">
-            <span className="font-mono">{(showAll ? i + 1 : i + 1)}.</span>
-            <span className="font-bold text-blue-600">{s.nickname}</span>
-            <span>{s.time}초</span>
+    <section className="my-4 w-full max-w-md rounded-xl bg-white p-4 text-gray-900 shadow">
+      <h2 className="mb-3 text-center text-xl font-bold">🏆 순위표 (TOP 50)</h2>
+
+      {isLoading && <p className="py-3 text-center text-sm text-gray-500">불러오는 중…</p>}
+      {loadError && (
+        <div className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900" role="status">
+          <p>{loadError}</p>
+          {isSupabaseConfigured() && (
+            <button
+              className="mt-2 rounded bg-amber-100 px-3 py-1 font-semibold hover:bg-amber-200"
+              onClick={() => void loadScores()}
+              type="button"
+            >
+              다시 시도
+            </button>
+          )}
+        </div>
+      )}
+
+      {!isLoading && !loadError && scores.length === 0 && (
+        <p className="py-3 text-center text-sm text-gray-500">아직 등록된 점수가 없습니다.</p>
+      )}
+
+      <ol className="space-y-1">
+        {visibleScores.map((score, index) => (
+          <li
+            key={score.id}
+            className="grid grid-cols-[2rem_1fr_auto] items-center rounded bg-gray-50 px-2 py-1"
+          >
+            <span className="font-mono">{index + 1}.</span>
+            <span className="truncate font-bold text-blue-600">{score.nickname}</span>
+            <span>{score.time}초</span>
           </li>
         ))}
-      </ul>
-      {!showAll && scores.length > 3 && (
+      </ol>
+
+      {scores.length > 3 && (
         <button
-          className="mt-2 w-full bg-gray-200 hover:bg-gray-300 text-gray-700 rounded py-1 font-semibold"
-          onClick={() => setShowAll(true)}
+          className="mt-2 w-full rounded bg-gray-100 py-1 font-semibold text-gray-700 hover:bg-gray-200"
+          onClick={() => setShowAll((current) => !current)}
+          type="button"
         >
-          더보기
+          {showAll ? '접기' : '더보기'}
         </button>
       )}
-      {showAll && scores.length > 3 && (
-        <button
-          className="mt-2 w-full bg-gray-100 hover:bg-gray-200 text-gray-500 rounded py-1 font-normal"
-          onClick={() => setShowAll(false)}
-        >
-          접기
-        </button>
-      )}
-    </div>
+    </section>
   )
 }

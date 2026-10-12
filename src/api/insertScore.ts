@@ -1,14 +1,10 @@
-import { createClient } from '@supabase/supabase-js'
-
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL!,
-  import.meta.env.VITE_SUPABASE_ANON_KEY!
-)
+import { getSupabaseClient } from './supabase'
 
 export async function insertScore(nickname: string, time: number) {
+  const supabase = await getSupabaseClient()
   const { error } = await supabase
     .from('scores')
-    .insert([{ nickname, time }])
+    .insert([{ nickname: nickname.trim(), time: Math.max(0, Math.floor(time)) }])
 
   if (error) throw error
 }

@@ -1,18 +1,14 @@
-// src/api/fetchTopScores.ts
-import { createClient } from '@supabase/supabase-js'
+import { getSupabaseClient } from './supabase'
+import type { Score } from './types'
 
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL!,
-  import.meta.env.VITE_SUPABASE_ANON_KEY!
-)
-
-export async function fetchTopScores() {
+export async function fetchTopScores(): Promise<Score[]> {
+  const supabase = await getSupabaseClient()
   const { data, error } = await supabase
     .from('scores')
-    .select('*')
+    .select('id, nickname, time')
     .order('time', { ascending: false })
     .limit(50)
 
   if (error) throw error
-  return data
+  return data ?? []
 }
