@@ -28,3 +28,16 @@ button,
 input {
   font: inherit;
 }
+
+.mobile-game-position {
+  padding-top: max(
+    2rem,
+    calc((100svh - min(calc(100vw - 1rem), 28rem)) / 2 - 2rem)
+  );
+}
+
+@media (min-width: 640px) {
+  .mobile-game-position {
+    padding-top: 0;
+  }
+}

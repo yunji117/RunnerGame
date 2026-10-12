@@ -8,7 +8,8 @@ import sojuImageUrl from '../img/soju.svg'
 import humanImageUrl from '../img/uk.svg'
 import { gameState } from '../states/gameState'
 
-const GAME_WIDTH = 800
+const MAX_GAME_WIDTH = 800
+const MIN_GAME_WIDTH = 400
 const GAME_HEIGHT = 400
 const GROUND_Y = 280
 const HUMAN_WIDTH = 50
@@ -23,7 +24,11 @@ const obstacleImageUrls = [
   beerImageUrl,
 ]
 
-export default function GameCanvas() {
+type GameCanvasProps = {
+  onFirstJump: () => void
+}
+
+export default function GameCanvas({ onFirstJump }: GameCanvasProps) {
   const [game, setGame] = useRecoilState(gameState)
   const canvasRef = useRef<HTMLDivElement>(null)
 
@@ -31,8 +36,13 @@ export default function GameCanvas() {
     if (game.status !== 'playing' || !canvasRef.current) return
 
     const container = canvasRef.current
+    const containerRatio = container.clientWidth / container.clientHeight
+    const gameWidth = Math.min(
+      MAX_GAME_WIDTH,
+      Math.max(MIN_GAME_WIDTH, Math.round(GAME_HEIGHT * containerRatio)),
+    )
     const app = new PIXI.Application({
-      width: GAME_WIDTH,
+      width: gameWidth,
       height: GAME_HEIGHT,
       backgroundAlpha: 0,
       antialias: true,
@@ -44,14 +54,14 @@ export default function GameCanvas() {
     container.focus()
 
     const background = PIXI.Sprite.from(backgroundImageUrl)
-    background.width = GAME_WIDTH
+    background.width = gameWidth
     background.height = GAME_HEIGHT
     app.stage.addChild(background)
 
     const human = PIXI.Sprite.from(humanImageUrl)
     human.width = HUMAN_WIDTH
     human.height = HUMAN_HEIGHT
-    human.position.set(100, GROUND_Y)
+    human.position.set(Math.min(100, gameWidth * 0.18), GROUND_Y)
     app.stage.addChild(human)
 
     const obstacles = Array.from({ length: MAX_OBSTACLES }, (_, index) => {
@@ -62,7 +72,7 @@ export default function GameCanvas() {
       obstacle.width = OBSTACLE_SIZE
       obstacle.height = OBSTACLE_SIZE
       obstacle.position.set(
-        GAME_WIDTH + 300 + index * 260 + Math.random() * 140,
+        gameWidth + 220 + index * 240 + Math.random() * 120,
         GROUND_Y + HUMAN_HEIGHT - OBSTACLE_SIZE,
       )
       app.stage.addChild(obstacle)
@@ -74,9 +84,14 @@ export default function GameCanvas() {
     let elapsedMilliseconds = 0
     let displayedSeconds = -1
     let hasEnded = false
+    let hasReceivedFirstInput = false
 
     const jump = () => {
       if (hasEnded || jumpCount >= 2) return
+      if (!hasReceivedFirstInput) {
+        hasReceivedFirstInput = true
+        onFirstJump()
+      }
       velocityY = -13
       jumpCount += 1
     }
@@ -122,7 +137,7 @@ export default function GameCanvas() {
 
         if (obstacle.x < -OBSTACLE_SIZE) {
           const farthestX = Math.max(...obstacles.map((item) => item.x))
-          obstacle.x = Math.max(GAME_WIDTH, farthestX) + 180 + Math.random() * 220
+          obstacle.x = Math.max(gameWidth, farthestX) + 180 + Math.random() * 220
         }
 
         const horizontalCollision =
@@ -151,7 +166,7 @@ export default function GameCanvas() {
       canvas.removeEventListener('pointerdown', handlePointerDown)
       app.destroy(true, { children: true, texture: false, baseTexture: false })
     }
-  }, [game.status, setGame])
+  }, [game.status, onFirstJump, setGame])
 
   return (
     <div

@@ -41,7 +41,7 @@ export default function Leaderboard({ refreshKey }: LeaderboardProps) {
   const visibleScores = showAll ? scores : scores.slice(0, 3)
 
   return (
-    <section className="my-4 w-full max-w-md rounded-xl bg-white p-4 text-gray-900 shadow">
+    <section className="w-full max-w-md rounded-xl bg-white p-4 text-gray-900 shadow">
       <h2 className="mb-3 text-center text-xl font-bold">🏆 순위표 (TOP 50)</h2>
 
       {isLoading && <p className="py-3 text-center text-sm text-gray-500">불러오는 중…</p>}
