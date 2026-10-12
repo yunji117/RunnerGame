@@ -13,11 +13,13 @@ npm run dev
 `.env.local`에 현재 활성 상태인 Supabase 프로젝트의 값을 설정합니다.
 
 ```env
-VITE_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
+VITE_SUPABASE_URL=https://zyslzcrngbskarodefpr.supabase.co
 VITE_SUPABASE_ANON_KEY=YOUR_SUPABASE_PUBLISHABLE_OR_ANON_KEY
 ```
 
 환경 변수를 바꾼 뒤에는 Vite 개발 서버를 재시작해야 합니다. 브라우저에 노출되는 publishable/anon key만 사용하고 `service_role` key는 절대 넣지 마세요.
+
+이 Supabase 프로젝트는 다른 앱과 공유되므로 Runner Game은 `public.runner_game_scores` 테이블만 사용합니다. 마이그레이션의 테이블, 인덱스, RLS 정책은 모두 `runner_game_` 접두어로 격리되어 있으며 기존 공유 프로젝트 객체를 수정하지 않습니다.
 
 ## 중지된 Supabase 프로젝트 이전
 
@@ -31,7 +33,7 @@ VITE_SUPABASE_ANON_KEY=YOUR_SUPABASE_PUBLISHABLE_OR_ANON_KEY
    psql -d "NEW_PROJECT_SESSION_POOLER_URL" -f /path/to/backup.backup
    ```
 
-4. 백업에 `scores` 테이블이 없거나 기존 데이터가 필요 없다면 새 프로젝트의 SQL Editor에서 `supabase/migrations/20261012000000_create_scores.sql`을 실행합니다.
+4. 백업에 `runner_game_scores` 테이블이 없거나 기존 데이터가 필요 없다면 새 프로젝트의 SQL Editor에서 `supabase/migrations/20261012000000_create_scores.sql`을 실행합니다.
 5. 새 프로젝트의 URL과 publishable/anon key를 `.env.local`에 입력합니다.
 6. `npm run dev`를 재시작하고 순위 조회와 점수 저장을 확인합니다.
 
